@@ -53,15 +53,14 @@ function App() {
   }, [])
 
   useEffect(() => {
-  if (typeof chrome === 'undefined' || !chrome.storage?.local) return
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
 
-  chrome.storage.local.get('hiretrack_pending_draft', result => {
-    const draft = result.hiretrack_pending_draft
-    if (!draft) return
-
-    prefillApplication(draft)
-  })
-}, [])
+    chrome.storage.local.get('hiretrack_pending_draft', result => {
+      const draft = result.hiretrack_pending_draft;
+      if (!draft) return;
+      prefillApplication(draft);
+    });
+  }, []);
 
   const recentApplications = useMemo(() => {
     return [...applications]

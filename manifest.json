@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "HireTrack",
+  "version": "1.0.0",
+  "description": "Track job applications from a popup and demo job pages.",
+  "permissions": ["storage", "tabs", "notifications"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "HireTrack"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dashboard.html", "index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
