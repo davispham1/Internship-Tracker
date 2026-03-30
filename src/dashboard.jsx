@@ -8,9 +8,10 @@ import {
 } from './storage'
 import './dashboard.css'
 
-const STATUS_ORDER = ['Applied', 'OA', 'Interview', 'Offer', 'Rejected']
+const STATUS_ORDER = ['Applying', 'Applied', 'OA', 'Interview', 'Offer', 'Rejected']
 
 const STATUS_COLORS = {
+  Applying: '#94a3b8',
   Applied: '#60a5fa',
   OA: '#a78bfa',
   Interview: '#f59e0b',
@@ -37,6 +38,7 @@ function getApplicationDateKey(item) {
 
 function getStatusCounts(applications) {
   const counts = {
+    Applying: 0,
     Applied: 0,
     OA: 0,
     Interview: 0,
@@ -45,7 +47,7 @@ function getStatusCounts(applications) {
   }
 
   for (const item of applications) {
-    const status = item.status || 'Applied'
+    const status = item.status || 'Applying'
     if (counts[status] !== undefined) {
       counts[status] += 1
     }
@@ -297,22 +299,30 @@ function DashboardApp() {
         </div>
 
         <section className="statsGrid summaryGrid">
-          <div className="statBox">
-            <span>Applied</span>
-            <strong>{statusCounts.Applied}</strong>
-          </div>
-          <div className="statBox">
-            <span>OA</span>
-            <strong>{statusCounts.OA}</strong>
-          </div>
-          <div className="statBox">
-            <span>Interview</span>
-            <strong>{statusCounts.Interview}</strong>
-          </div>
-          <div className="statBox">
-            <span>Offer</span>
-            <strong>{statusCounts.Offer}</strong>
-          </div>
+            <div className="statBox">
+                <span>Applying</span>
+                <strong>{statusCounts.Applying}</strong>
+            </div>
+            <div className="statBox">
+                <span>Applied</span>
+                <strong>{statusCounts.Applied}</strong>
+            </div>
+            <div className="statBox">
+                <span>OA</span>
+                <strong>{statusCounts.OA}</strong>
+            </div>
+            <div className="statBox">
+                <span>Interview</span>
+                <strong>{statusCounts.Interview}</strong>
+            </div>
+            <div className="statBox">
+                <span>Offer</span>
+                <strong>{statusCounts.Offer}</strong>
+            </div>
+            <div className="statBox">
+                <span>Rejected</span>
+                <strong>{statusCounts.Rejected}</strong>
+            </div>
         </section>
       </section>
 
@@ -393,15 +403,16 @@ function DashboardApp() {
         />
 
         <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All statuses</option>
-          <option value="Applied">Applied</option>
-          <option value="OA">OA</option>
-          <option value="Interview">Interview</option>
-          <option value="Offer">Offer</option>
-          <option value="Rejected">Rejected</option>
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            >
+            <option value="All">All statuses</option>
+            <option value="Applying">Applying</option>
+            <option value="Applied">Applied</option>
+            <option value="OA">OA</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
         </select>
       </section>
 
@@ -418,14 +429,15 @@ function DashboardApp() {
                 </div>
 
                 <select
-                  value={item.status}
-                  onChange={e => handleStatusChange(item.id, e.target.value)}
-                >
-                  <option value="Applied">Applied</option>
-                  <option value="OA">OA</option>
-                  <option value="Interview">Interview</option>
-                  <option value="Offer">Offer</option>
-                  <option value="Rejected">Rejected</option>
+                    value={item.status}
+                    onChange={e => handleStatusChange(item.id, e.target.value)}
+                    >
+                    <option value="Applying">Applying</option>
+                    <option value="Applied">Applied</option>
+                    <option value="OA">OA</option>
+                    <option value="Interview">Interview</option>
+                    <option value="Offer">Offer</option>
+                    <option value="Rejected">Rejected</option>
                 </select>
               </div>
 

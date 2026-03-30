@@ -182,3 +182,35 @@
     border-right-color: var(--border);
   }
 }
+
+.formActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.formActions .primaryBtn,
+.formActions .secondaryBtn {
+  flex: 1;
+  height: 56px;
+  border: none;
+  border-radius: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.formActions .primaryBtn {
+  background: #2f66e8;
+  color: white;
+}
+
+.formActions .secondaryBtn {
+  background: #e9e9ee;
+  color: #111827;
+}

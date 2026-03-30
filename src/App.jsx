@@ -11,7 +11,7 @@ const emptyForm = {
   role: '',
   location: '',
   dateApplied: new Date().toISOString().split('T')[0],
-  status: 'Applied',
+  status: 'Applying',
   link: '',
   notes: ''
 }
@@ -26,6 +26,21 @@ function App() {
   })
   const [form, setForm] = useState(emptyForm)
 
+  function prefillApplication(data) {
+    setForm({
+      ...emptyForm,
+      company: data.company || '',
+      role: data.role || '',
+      location: data.location || '',
+      dateApplied: data.dateApplied || new Date().toISOString().split('T')[0],
+      status: data.status || 'Applying',
+      link: data.link || '',
+      notes: data.notes || ''
+    })
+
+    setActiveTab('add')
+  }
+
   useEffect(() => {
     async function loadData() {
       const savedApps = await getApplications()
@@ -36,6 +51,17 @@ function App() {
 
     loadData()
   }, [])
+
+  useEffect(() => {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return
+
+  chrome.storage.local.get('hiretrack_pending_draft', result => {
+    const draft = result.hiretrack_pending_draft
+    if (!draft) return
+
+    prefillApplication(draft)
+  })
+}, [])
 
   const recentApplications = useMemo(() => {
     return [...applications]
@@ -57,32 +83,48 @@ function App() {
   }
 
   async function handleAddInternship(e) {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (!form.company.trim() || !form.role.trim()) {
-      alert('Company and role are required')
-      return
-    }
+  if (!form.company.trim() || !form.role.trim()) {
+    alert('Company and role are required')
+    return
+  }
 
-    const newItem = {
-      id: crypto.randomUUID(),
-      company: form.company.trim(),
-      role: form.role.trim(),
-      location: form.location.trim(),
-      dateApplied: form.dateApplied,
-      status: form.status,
-      link: form.link.trim(),
-      notes: form.notes.trim(),
-      createdAt: Date.now()
-    }
+  const newItem = {
+    id: crypto.randomUUID(),
+    company: form.company.trim(),
+    role: form.role.trim(),
+    location: form.location.trim(),
+    dateApplied: form.dateApplied,
+    status: form.status,
+    link: form.link.trim(),
+    notes: form.notes.trim(),
+    createdAt: Date.now()
+  }
 
-    const updated = await addApplication(newItem)
-    setApplications(updated)
-    setForm({
-      ...emptyForm,
-      dateApplied: new Date().toISOString().split('T')[0]
-    })
-    setActiveTab('home')
+  const updated = await addApplication(newItem)
+  setApplications(updated)
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.remove('hiretrack_pending_draft')
+  }
+
+  setForm({
+    ...emptyForm,
+    dateApplied: new Date().toISOString().split('T')[0]
+  })
+  setActiveTab('home')
+}
+
+  function handleClearForm() {
+  setForm({
+    ...emptyForm,
+    dateApplied: new Date().toISOString().split('T')[0]
+  })
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.remove('hiretrack_pending_draft')
+  }
   }
 
   async function handleSaveProfile(e) {
@@ -229,6 +271,7 @@ function App() {
                   value={form.status}
                   onChange={e => updateForm('status', e.target.value)}
                 >
+                  <option value="Applying">Applying</option>
                   <option value="Applied">Applied</option>
                   <option value="OA">OA</option>
                   <option value="Interview">Interview</option>
@@ -250,9 +293,19 @@ function App() {
                   onChange={e => updateForm('notes', e.target.value)}
                 />
 
-                <button className="primaryBtn" type="submit">
-                  Save internship
-                </button>
+                <div className="formActions">
+                  <button className="primaryBtn" type="submit">
+                    Save internship
+                  </button>
+
+                  <button
+                    className="secondaryBtn"
+                    type="button"
+                    onClick={handleClearForm}
+                  >
+                    Clear
+                  </button>
+                </div>
               </form>
             </div>
           </section>

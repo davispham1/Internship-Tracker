@@ -1,61 +1,81 @@
 const APPLICATIONS_KEY = 'internship_applications'
-const PROFILE_KEY = 'internship_profile'
-
-function hasChromeStorage() {
-  return typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local
-}
+const PROFILE_KEY = 'hiretrack_profile'
 
 export async function getApplications() {
-  if (hasChromeStorage()) {
-    const result = await chrome.storage.local.get([APPLICATIONS_KEY])
-    return result[APPLICATIONS_KEY] || []
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.get([APPLICATIONS_KEY], result => {
+        resolve(result[APPLICATIONS_KEY] || [])
+      })
+    })
   }
 
   const raw = localStorage.getItem(APPLICATIONS_KEY)
   return raw ? JSON.parse(raw) : []
 }
 
-export async function saveApplications(applications) {
-  if (hasChromeStorage()) {
-    await chrome.storage.local.set({
-      [APPLICATIONS_KEY]: applications
+export async function addApplication(item) {
+  const existing = await getApplications()
+  const updated = [item, ...existing]
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.set({ [APPLICATIONS_KEY]: updated }, () => {
+        resolve(updated)
+      })
     })
-    return
   }
 
-  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(applications))
-}
-
-export async function addApplication(application) {
-  const current = await getApplications()
-  const updated = [application, ...current]
-  await saveApplications(updated)
+  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated))
   return updated
 }
 
 export async function updateApplication(id, updates) {
-  const current = await getApplications()
-  const updated = current.map(item =>
+  const existing = await getApplications()
+  const updated = existing.map(item =>
     item.id === id ? { ...item, ...updates } : item
   )
-  await saveApplications(updated)
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.set({ [APPLICATIONS_KEY]: updated }, () => {
+        resolve(updated)
+      })
+    })
+  }
+
+  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated))
   return updated
 }
 
 export async function deleteApplication(id) {
-  const current = await getApplications()
-  const updated = current.filter(item => item.id !== id)
-  await saveApplications(updated)
+  const existing = await getApplications()
+  const updated = existing.filter(item => item.id !== id)
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.set({ [APPLICATIONS_KEY]: updated }, () => {
+        resolve(updated)
+      })
+    })
+  }
+
+  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated))
   return updated
 }
 
 export async function getProfile() {
-  if (hasChromeStorage()) {
-    const result = await chrome.storage.local.get([PROFILE_KEY])
-    return result[PROFILE_KEY] || {
-      name: 'Your Name',
-      email: 'you@example.com'
-    }
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.get([PROFILE_KEY], result => {
+        resolve(
+          result[PROFILE_KEY] || {
+            name: 'Your Name',
+            email: 'you@example.com'
+          }
+        )
+      })
+    })
   }
 
   const raw = localStorage.getItem(PROFILE_KEY)
@@ -68,12 +88,14 @@ export async function getProfile() {
 }
 
 export async function saveProfile(profile) {
-  if (hasChromeStorage()) {
-    await chrome.storage.local.set({
-      [PROFILE_KEY]: profile
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.set({ [PROFILE_KEY]: profile }, () => {
+        resolve(profile)
+      })
     })
-    return
   }
 
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  return profile
 }
