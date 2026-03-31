@@ -114,6 +114,147 @@
     }
 
 
+    // ─── AUTOFILL ─────────────────────────────────────────────────────────────
+
+    function findInput(patterns) {
+        const attrs = ["name", "id", "placeholder", "aria-label", "autocomplete"];
+        const inputs = Array.from(document.querySelectorAll(
+            "input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]), textarea"
+        ));
+        for (const pattern of patterns) {
+            for (const el of inputs) {
+                for (const attr of attrs) {
+                    const val = (el.getAttribute(attr) || "").toLowerCase();
+                    if (val.includes(pattern)) return el;
+                }
+            }
+        }
+        return null;
+    }
+
+    function fillField(el, value) {
+        if (!el || !value) return false;
+        if (el.value === value) return false;
+        const proto = el.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+        const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+        if (setter) setter.call(el, value);
+        else el.value = value;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+    }
+
+    function runAutofill(profile) {
+        const nameParts = (profile.name || "").trim().split(/\s+/);
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        const fieldDefs = [
+            { value: firstName,        patterns: ["firstname", "first-name", "first_name", "fname", "given-name", "givenname"] },
+            { value: lastName,         patterns: ["lastname", "last-name", "last_name", "lname", "surname", "family-name"] },
+            { value: profile.name,     patterns: ["fullname", "full-name", "full_name"] },
+            { value: profile.email,    patterns: ["email", "e-mail"] },
+            { value: profile.phone,    patterns: ["phone", "tel", "mobile", "cell"] },
+            { value: profile.linkedin, patterns: ["linkedin"] },
+            { value: profile.github,   patterns: ["github"] },
+            { value: profile.website,  patterns: ["website", "portfolio", "personal-site", "personalsite"] },
+            { value: profile.city,     patterns: ["city", "location"] },
+        ];
+
+        let filled = 0;
+        for (const { value, patterns } of fieldDefs) {
+            if (!value) continue;
+            const el = findInput(patterns);
+            if (fillField(el, value)) filled++;
+        }
+
+        // Fallback: plain "name" field if still empty
+        if (profile.name) {
+            const el = findInput(["name"]);
+            if (el && !el.value && fillField(el, profile.name)) filled++;
+        }
+
+        return filled;
+    }
+
+    function showAutofillButton(profile) {
+        if (document.getElementById("hiretrack-autofill-btn")) return;
+
+        const btn = document.createElement("button");
+        btn.id = "hiretrack-autofill-btn";
+        btn.textContent = "⚡ HireTrack Autofill";
+        Object.assign(btn.style, {
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            zIndex: "999999",
+            background: "#3b82f6",
+            color: "#ffffff",
+            border: "none",
+            padding: "10px 18px",
+            borderRadius: "10px",
+            cursor: "pointer",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "13px",
+            fontWeight: "600",
+            boxShadow: "0 4px 15px rgba(59,130,246,0.4)",
+            transition: "opacity 0.2s",
+        });
+
+        btn.addEventListener("mouseenter", () => { btn.style.opacity = "0.85"; });
+        btn.addEventListener("mouseleave", () => { btn.style.opacity = "1"; });
+
+        btn.addEventListener("click", () => {
+            const filled = runAutofill(profile);
+            btn.remove();
+            showToast(
+                filled > 0
+                    ? `Autofilled ${filled} field${filled > 1 ? "s" : ""} with your profile.`
+                    : "No matching fields found on this page.",
+                () => chrome.runtime.sendMessage({ type: "HIRETRACK_OPEN_DASHBOARD" })
+            );
+        });
+
+        document.body.appendChild(btn);
+    }
+
+    function checkAndShowAutofill() {
+        const hasInputs = document.querySelectorAll(
+            "input[type=text], input[type=email], input[type=tel], input[type=url], textarea"
+        ).length > 0;
+        if (!hasInputs) return;
+
+        chrome.storage.local.get("hiretrack_profile", result => {
+            const profile = result.hiretrack_profile;
+            if (!profile) return;
+            if (!profile.name || profile.name === "Your Name") return;
+            showAutofillButton(profile);
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", checkAndShowAutofill);
+    } else {
+        checkAndShowAutofill();
+    }
+
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        if (message?.type === "HIRETRACK_TRIGGER_AUTOFILL") {
+            chrome.storage.local.get("hiretrack_profile", result => {
+                const profile = result.hiretrack_profile;
+                if (!profile) {
+                    sendResponse({ success: false, filled: 0 });
+                    return;
+                }
+                const filled = runAutofill(profile);
+                sendResponse({ success: true, filled });
+            });
+            return true;
+        }
+    });
+
+    // ─── END AUTOFILL ─────────────────────────────────────────────────────────
+
     document.addEventListener("click", (event) => {
         const target = event.target.closest("[data-hiretrack-submit]");
         if (!target) return;

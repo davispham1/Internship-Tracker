@@ -71,7 +71,12 @@ export async function getProfile() {
         resolve(
           result[PROFILE_KEY] || {
             name: 'Your Name',
-            email: 'you@example.com'
+            email: 'you@example.com',
+            phone: '',
+            linkedin: '',
+            github: '',
+            website: '',
+            city: ''
           }
         )
       })
@@ -83,7 +88,12 @@ export async function getProfile() {
     ? JSON.parse(raw)
     : {
         name: 'Your Name',
-        email: 'you@example.com'
+        email: 'you@example.com',
+        phone: '',
+        linkedin: '',
+        github: '',
+        website: '',
+        city: ''
       }
 }
 

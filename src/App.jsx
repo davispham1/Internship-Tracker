@@ -22,7 +22,12 @@ function App() {
   const [expandedIds, setExpandedIds] = useState([])
   const [profile, setProfile] = useState({
     name: 'Your Name',
-    email: 'you@example.com'
+    email: 'you@example.com',
+    phone: '',
+    linkedin: '',
+    github: '',
+    website: '',
+    city: ''
   })
   const [form, setForm] = useState(emptyForm)
 
@@ -130,6 +135,28 @@ function App() {
     e.preventDefault()
     await saveProfile(profile)
     alert('Profile saved')
+  }
+
+  function handleAutofillTab() {
+    if (typeof chrome === 'undefined' || !chrome.tabs) {
+      alert('Autofill only works inside the Chrome extension.')
+      return
+    }
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      const tabId = tabs[0]?.id
+      if (!tabId) return
+      chrome.tabs.sendMessage(tabId, { type: 'HIRETRACK_TRIGGER_AUTOFILL' }, response => {
+        if (chrome.runtime.lastError) {
+          alert('Could not reach the page. Try reloading the tab.')
+          return
+        }
+        if (response?.filled > 0) {
+          alert(`Autofilled ${response.filled} field${response.filled > 1 ? 's' : ''} on this page.`)
+        } else {
+          alert('No matching fields found on this page.')
+        }
+      })
+    })
   }
 
   function openDashboard() {
@@ -318,30 +345,57 @@ function App() {
               <form className="form" onSubmit={handleSaveProfile}>
                 <input
                   type="text"
-                  placeholder="Your name"
+                  placeholder="Full name"
                   value={profile.name}
-                  onChange={e =>
-                    setProfile(prev => ({
-                      ...prev,
-                      name: e.target.value
-                    }))
-                  }
+                  onChange={e => setProfile(prev => ({ ...prev, name: e.target.value }))}
                 />
-
                 <input
                   type="email"
-                  placeholder="Your email"
+                  placeholder="Email"
                   value={profile.email}
-                  onChange={e =>
-                    setProfile(prev => ({
-                      ...prev,
-                      email: e.target.value
-                    }))
-                  }
+                  onChange={e => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone number"
+                  value={profile.phone}
+                  onChange={e => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                />
+                <input
+                  type="text"
+                  placeholder="City / Location"
+                  value={profile.city}
+                  onChange={e => setProfile(prev => ({ ...prev, city: e.target.value }))}
+                />
+                <input
+                  type="url"
+                  placeholder="LinkedIn URL"
+                  value={profile.linkedin}
+                  onChange={e => setProfile(prev => ({ ...prev, linkedin: e.target.value }))}
+                />
+                <input
+                  type="url"
+                  placeholder="GitHub URL"
+                  value={profile.github}
+                  onChange={e => setProfile(prev => ({ ...prev, github: e.target.value }))}
+                />
+                <input
+                  type="url"
+                  placeholder="Portfolio / Website URL"
+                  value={profile.website}
+                  onChange={e => setProfile(prev => ({ ...prev, website: e.target.value }))}
                 />
 
                 <button className="primaryBtn" type="submit">
                   Save profile
+                </button>
+
+                <button
+                  className="secondaryBtn"
+                  type="button"
+                  onClick={handleAutofillTab}
+                >
+                  Autofill current tab
                 </button>
 
                 <button
